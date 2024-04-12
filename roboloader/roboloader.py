@@ -59,7 +59,7 @@ class CocoDetection(torch.utils.data.Dataset):
 
         try:
             target = target[0]["bbox"]
-            target.insert(0,0)
+            target = [0] + target
 
         except (IndexError, KeyError):
             # Si une IndexError ou KeyError est levée (target est vide ou n'a pas de clé "bbox"), attribuer une valeur par défaut
