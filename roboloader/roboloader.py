@@ -76,6 +76,8 @@ class CocoDetection(torch.utils.data.Dataset):
         if self.transform is not None:
             img = self.transform(img)
 
+
+        target = [0] + target
         target = torch.tensor(target)
         return img, target
 
