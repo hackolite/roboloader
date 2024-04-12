@@ -98,7 +98,7 @@ def get_train_iter(
     return train_iter
 
 def generate_test() -> None:
-    train_iter = get_train_iter(image_folder="/home/lamaaz/roboloader/satellite/train/", annotations_file="/home/lamaaz/roboloader/satellite/train/_annotations.coco.json")
+    train_iter = get_train_iter(image_folder="", annotations_file="")
     batch = next(iter(train_iter))
     images = batch[0][0:50]  
     labels = batch[1][0:50]  
@@ -110,6 +110,3 @@ def generate_test() -> None:
         opencv_image = cv2.rectangle(opencv_image, (x, y), (x + w, y + h), (0, 255, 0), 2) 
         x_min, y_min, width, height = label
         cv2.imwrite("{}.jpg".format(generate_random_string(10)), opencv_image)
-
-
-generate_test()
