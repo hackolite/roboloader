@@ -57,18 +57,10 @@ class CocoDetection(torch.utils.data.Dataset):
 
         img = Image.open(os.path.join(self.root, path)).convert('RGB')
 
-        try:
-            # Essayer d'accéder à target[0]["bbox"]
-            bbox = target[0]["bbox"]
-        
-        except (IndexError, KeyError):
-            # Si une IndexError ou KeyError est levée (target est vide ou n'a pas de clé "bbox"), attribuer une valeur par défaut
-            target = []  # Par exemple, [0, 0, 0, 0] est une valeur arbitraire
-            target = torch.tensor(target)
-            img = self.transform(img)
-            return img, target
 
 
+
+        target = target[0]["bbox"]
         shape = img.size[::-1]
         target = resize_bbox(target, shape, self.resize)
 
