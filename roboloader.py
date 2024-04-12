@@ -77,7 +77,7 @@ class CocoDetection(torch.utils.data.Dataset):
 
 
 
-def load_data_satellite(batch_size, cocodataset):
+def load_data(batch_size, cocodataset):
       """Load the satellite detection dataset."""
       train_iter = torch.utils.data.DataLoader(cocodataset, batch_size, shuffle=True)
       return train_iter
@@ -89,7 +89,7 @@ def get_train_iter(batch_size=32, annotations_file=None, image_folder=None, resi
 	image_folder     = image_folder
 	annotations_file = annotations_file
 	cocodataset = CocoDetection(image_folder, annotations_file, resize=resize_shape)
-	train_iter = load_data_satellite(batch_size, cocodataset)
+	train_iter = load_data(batch_size, cocodataset)
 	return train_iter
 
 
@@ -112,5 +112,4 @@ def generate_test():
 		cv2.imwrite("{}.jpg".format(generate_random_string(10)), opencv_image)
 
 
-
-generate_test()
+#generate_test()
