@@ -57,15 +57,13 @@ class CocoDetection(torch.utils.data.Dataset):
 
         img = Image.open(os.path.join(self.root, path)).convert('RGB')
 
-        print(target)
-
         try:
-            target = target[0]["bbox"]
+            target = target[0]["bbox"].insert(0,0)
 
 
         except (IndexError, KeyError):
             # Si une IndexError ou KeyError est levée (target est vide ou n'a pas de clé "bbox"), attribuer une valeur par défaut
-            target = []  # Par exemple, [0, 0, 0, 0] est une valeur arbitraire
+            target = [0,0,0,0,0]  # Par exemple, [0, 0, 0, 0] est une valeur arbitraire
             target = torch.tensor(target)
             img = self.transform(img)
             return img, target
