@@ -9,7 +9,7 @@ def resize_bbox(bbox, original_size, new_size):
     Resize bounding box coordinates based on original and new image sizes.
     """
     # Unpack bounding box coordinates
-    x_min, y_min, width, height   = bbox[1:]
+    _, x_min, y_min, width, height   = bbox
     # Calculate scaling factors
     scale_x = new_size[1] / original_size[1]
     scale_y = new_size[0] / original_size[0]
