@@ -9,7 +9,7 @@ import random
 import string
 import matplotlib.pyplot as plt
 
-from utils import generate_random_string, resize_bbox
+from .utils import generate_random_string, resize_bbox
 
 
 class CocoDetection(torch.utils.data.Dataset):
