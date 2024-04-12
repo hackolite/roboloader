@@ -1,3 +1,4 @@
+from typing import Tuple, Optional, Callable
 import torch
 import torchvision.transforms as transforms
 import cv2
@@ -10,34 +11,42 @@ import matplotlib.pyplot as plt
 
 from utils import generate_random_string, resize_bbox
 
+
 class CocoDetection(torch.utils.data.Dataset):
-    """`MS Coco Detection <http://mscoco.org/dataset/#detections-challenge2016>`_ Dataset.
+    """Classe représentant le jeu de données MS Coco Detection.
 
     Args:
-        root (string): Root directory where images are downloaded to.
-        annFile (string): Path to json annotation file.
-        transform (callable, optional): A function/transform that  takes in an PIL image
-            and returns a transformed version. E.g, ``transforms.ToTensor``
-        target_transform (callable, optional): A function/transform that takes in the
-            target and transforms it.
+        root (str): Répertoire racine où les images sont téléchargées.
+        annFile (str): Chemin vers le fichier d'annotations JSON.
+        transform (callable, optionnel): Une fonction/transformation qui prend une image PIL
+            et retourne une version transformée. Par exemple, ``transforms.ToTensor``.
+        target_transform (callable, optionnel): Une fonction/transformation qui prend la
+            cible et la transforme.
     """
-
-    def __init__(self, root, annFile, transform=None, resize=None, target_transform=None):
+    
+    def __init__(
+        self,
+        root: str,
+        annFile: str,
+        transform: Optional[Callable] = None,
+        resize: Optional[Tuple[int, int]] = None,
+        target_transform: Optional[Callable] = None
+    ) -> None:
         from pycocotools.coco import COCO
         self.root = root
         self.coco = COCO(annFile)
         self.ids = list(self.coco.imgs.keys())
-        self.transform = transforms.Compose([transforms.Resize(resize),transforms.ToTensor()])
+        self.transform = transforms.Compose([transforms.Resize(resize), transforms.ToTensor()])
         self.resize = resize
         self.target_transform = target_transform
 
-    def __getitem__(self, index):
+    def __getitem__(self, index: int) -> Tuple[torch.Tensor, torch.Tensor]:
         """
         Args:
-            index (int): Index
+            index (int): Indice
 
         Returns:
-            tuple: Tuple (image, target). target is the object returned by ``coco.loadAnns``.
+            tuple: Tuple (image, target). La cible est l'objet retourné par ``coco.loadAnns``.
         """
         coco = self.coco
         img_id = self.ids[index]
@@ -55,61 +64,52 @@ class CocoDetection(torch.utils.data.Dataset):
         if self.transform is not None:
             img = self.transform(img)
 
-        #if self.target_transform is not None:
-        
         target = torch.tensor(target)
         return img, target
 
-
-    def __len__(self):
+    def __len__(self) -> int:
         return len(self.ids)
 
-    def __repr__(self):
-        fmt_str = 'Dataset ' + self.__class__.__name__ + '\n'
-        fmt_str += '    Number of datapoints: {}\n'.format(self.__len__())
-        fmt_str += '    Root Location: {}\n'.format(self.root)
-        tmp = '    Transforms (if any): '
+    def __repr__(self) -> str:
+        fmt_str = 'Jeu de données ' + self.__class__.__name__ + '\n'
+        fmt_str += '    Nombre de points de données : {}\n'.format(self.__len__())
+        fmt_str += '    Répertoire racine : {}\n'.format(self.root)
+        tmp = '    Transformations (si disponibles) : '
         fmt_str += '{0}{1}\n'.format(tmp, self.transform.__repr__().replace('\n', '\n' + ' ' * len(tmp)))
-        tmp = '    Target Transforms (if any): '
+        tmp = '    Transformations cibles (si disponibles) : '
         fmt_str += '{0}{1}'.format(tmp, self.target_transform.__repr__().replace('\n', '\n' + ' ' * len(tmp)))
         return fmt_str
 
+def load_data(batch_size: int, cocodataset: CocoDetection) -> torch.utils.data.DataLoader:
+    """Charger le jeu de données de détection satellite."""
+    train_iter = torch.utils.data.DataLoader(cocodataset, batch_size, shuffle=True)
+    return train_iter
+
+def get_train_iter(
+    batch_size: int = 32,
+    annotations_file: Optional[str] = None,
+    image_folder: Optional[str] = None,
+    resize_shape: Tuple[int, int] = (300, 300)
+) -> torch.utils.data.DataLoader:
+    image_folder = image_folder
+    annotations_file = annotations_file
+    cocodataset = CocoDetection(image_folder, annotations_file, resize=resize_shape)
+    train_iter = load_data(batch_size, cocodataset)
+    return train_iter
+
+def generate_test() -> None:
+    train_iter = get_train_iter(image_folder="/home/lamaaz/roboloader/satellite/train/", annotations_file="/home/lamaaz/roboloader/satellite/train/_annotations.coco.json")
+    batch = next(iter(train_iter))
+    images = batch[0][0:50]  
+    labels = batch[1][0:50]  
+
+    for image, label in zip(images, labels):
+        pil_image = transforms.ToPILImage()(image)
+        opencv_image = cv2.cvtColor(np.array(pil_image), cv2.COLOR_RGB2BGR)
+        x, y, h, w = label.tolist()
+        opencv_image = cv2.rectangle(opencv_image, (x, y), (x + w, y + h), (0, 255, 0), 2) 
+        x_min, y_min, width, height = label
+        cv2.imwrite("{}.jpg".format(generate_random_string(10)), opencv_image)
 
 
-
-def load_data(batch_size, cocodataset):
-      """Load the satellite detection dataset."""
-      train_iter = torch.utils.data.DataLoader(cocodataset, batch_size, shuffle=True)
-      return train_iter
-
-
-
-
-def get_train_iter(batch_size=32, annotations_file=None, image_folder=None, resize_shape=(300, 300)):
-	image_folder     = image_folder
-	annotations_file = annotations_file
-	cocodataset = CocoDetection(image_folder, annotations_file, resize=resize_shape)
-	train_iter = load_data(batch_size, cocodataset)
-	return train_iter
-
-
-
-def generate_test():
-	train_iter = get_train_iter(image_folder="/home/lamaaz/robococo/tmp/airplane/train/", annotations_file="/home/lamaaz/robococo/tmp/airplane/train/_annotations.coco.json")
-	batch = next(iter(train_iter))
-	# Assuming batch is a tuple containing images and their corresponding labels
-	images = batch[0][0:50]  # Selecting the first 20 images from the batch
-	labels = batch[1][0:50]  # Selecting the corresponding labels
-	reshaped_images = images 
-	#reshaped_images = reshaped_images.permute(0, 2, 3, 1)
-
-	for image, label in zip(reshaped_images, labels):
-		pil_image = transforms.ToPILImage()(image)
-		opencv_image = cv2.cvtColor(np.array(pil_image), cv2.COLOR_RGB2BGR)
-		x, y, h, w = label.tolist()
-		opencv_image = cv2.rectangle(opencv_image, (x, y), (x + w, y + h), (0, 255, 0), 2) 
-		xmin, ymin,  width, height = label
-		cv2.imwrite("{}.jpg".format(generate_random_string(10)), opencv_image)
-
-
-#generate_test()
+generate_test()
